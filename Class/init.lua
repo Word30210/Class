@@ -13,13 +13,7 @@
 	Word30210 https://github.com/Word30210
 	
 	#[ Github 'Class' repository ]#
-	[ Not yet ]
+	[ https://github.com/Word30210/Class ]
 ]]
 
---// Types
-local types = require(script.Types)
-
---// Main Module
-local main = require(script.Main) :: types.main
-
-return main
+return require(script.main)
