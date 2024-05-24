@@ -1,8 +1,9 @@
---// Types
-local types = require(script.Parent:WaitForChild("Types"))
+--#[ Variables ]#--
+local metatable = { __type = "event" }
 
-local function newEventLevel1(eventName: string | { string }): types.nm_final
-	return setmetatable({ eventName }, { __metatable = "event" })
+--#[ Functions ]#--
+local function main(eventName: string)
+    return setmetatable({ name = eventName }, metatable)
 end
 
-return newEventLevel1
+return main
