@@ -1,13 +1,5 @@
 --#[ Variables ]#--
-local metatable = {
-    __type = "func";
-
-    __call = function(self, runner)
-        self.runner = runner
-        getmetatable(self).__call = nil
-        return self
-    end
-}
+--
 
 --#[ Functions ]#--
 local function main(funcName: string)
@@ -22,7 +14,15 @@ local function main(funcName: string)
         funcType = "magic"
     end
 
-    return setmetatable({ name = fnName or funcName, funcType = funcType, runner = print }, metatable)
+    return setmetatable({ name = fnName or funcName, funcType = funcType, runner = print }, {
+        __type = "func";
+    
+        __call = function(self, runner)
+            self.runner = runner
+            getmetatable(self).__call = nil
+            return self
+        end
+    })
 end
 
 return main
