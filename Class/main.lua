@@ -15,14 +15,17 @@ local setProp = require(script.Parent.setProp)
 local setProps = require(script.Parent.setProps)
 
 --#[ libs ]#--
-local libs = script.Parent.lib
-local assert = require(libs.customAssert)
-local warn = require(libs.customWarn)
-local pipe = require(libs.pipe)
-local typeChecker = require(libs.typeChecker)
+local lib = script.Parent.lib
+local assert = require(lib.customAssert)
+local warn = require(lib.customWarn)
+local pipe = require(lib.pipe)
+local typeChecker = require(lib.typeChecker)
+local LemonSignal = require(lib.LemonSignal)
 
 --#[ Variables ]#--
 local main = {}
+
+local null = newproxy()
 
 local getableClassKeyDict = {
 	new = true
@@ -80,7 +83,6 @@ function buildClass(className, magicmethods, functions, methods, events)
 	local metatable = getmetatable(class)
 
 	local function new(...: any)
-		print("[ main.new ]: ", ...)
 		return buildObject(class, ...)
 	end
 
@@ -122,8 +124,8 @@ function buildObject(class, ...: any)
 	local events = getVariable "events"
 	local className = getVariable "className"
 
-	local internals = weaktable {}
-	local properties = weaktable {}
+	local internals = {}
+	local properties = {}
 
 	local object = newproxy(true)
 	local metatable = getmetatable(object)
@@ -137,6 +139,10 @@ function buildObject(class, ...: any)
 
 	metatable.__getableKeyDict = getableKeyDict
 	metatable.__setableKeyDict = setableKeyDict
+
+	if magicmethods.__new then
+		magicmethods.__new.runner(object, internals, ...)
+	end
 
 	for _, func in functions do
 		getableKeyDict[func.name] = true
@@ -152,17 +158,32 @@ function buildObject(class, ...: any)
 
 	for _, event in events do
 		getableKeyDict[event.name] = true
+		properties[event.name] = LemonSignal.new()
 	end
 
 	function metatable.__index(self, key)
 		assert(getableKeyDict[key], `{ key } is not a valid member of { tostring(class) }.`)
 
 		if magicmethods.__getter then
-			return magicmethods.__getter.runner(self, internals, key)
+			local result = magicmethods.__getter.runner(self, internals, key)
+			if result == null then
+				return nil
+			else
+				return result
+			end
 		elseif magicmethods.__index then
-			return magicmethods.__index.runner(self, internals, key)
+			local result = magicmethods.__index.runner(self, internals, key)
+			if result == null then
+				return nil
+			else
+				return result
+			end
 		else
-			return properties[key]
+			if properties[key] == null then
+				return nil
+			else
+				return properties[key]
+			end
 		end
 	end
 
@@ -198,43 +219,43 @@ function buildObject(class, ...: any)
 		end
 	end
 
-	function metatable._add(obj1, obj2)
+	function metatable.__add(obj1, obj2)
 		if magicmethods.__add then
 			return magicmethods.__add.runner(object, internals, obj1, obj2)
 		end
 	end
 
-	function metatable._sub(obj1, obj2)
+	function metatable.__sub(obj1, obj2)
 		if magicmethods.__sub then
 			return magicmethods.__sub.runner(object, internals, obj1, obj2)
 		end
 	end
 
-	function metatable._mul(obj1, obj2)
+	function metatable.__mul(obj1, obj2)
 		if magicmethods.__mul then
 			return magicmethods.__mul.runner(object, internals, obj1, obj2)
 		end
 	end
 
-	function metatable._div(obj1, obj2)
+	function metatable.__div(obj1, obj2)
 		if magicmethods.__div then
 			return magicmethods.__div.runner(object, internals, obj1, obj2)
 		end
 	end
 
-	function metatable._idiv(obj1, obj2)
+	function metatable.__idiv(obj1, obj2)
 		if magicmethods.__idiv then
 			return magicmethods.__idiv.runner(object, internals, obj1, obj2)
 		end
 	end
 
-	function metatable._mod(obj1, obj2)
+	function metatable.__mod(obj1, obj2)
 		if magicmethods.__mod then
 			return magicmethods.__mod.runner(object, internals, obj1, obj2)
 		end
 	end
 
-	function metatable._pow(obj1, obj2)
+	function metatable.__pow(obj1, obj2)
 		if magicmethods.__pow then
 			return magicmethods.__pow.runner(object, internals, obj1, obj2)
 		end
@@ -268,10 +289,16 @@ function buildObject(class, ...: any)
 		end
 	end
 
-	function metatable._len()
+	function metatable.__len(self)
+		if magicmethods.__len then
+			return magicmethods.__len.runner(self, internals)
+		end
 	end
 
-	function metatable._iter()
+	function metatable.__iter(self)
+		if magicmethods.__iter then
+			return magicmethods.__iter.runner(self, internals)
+		end
 	end
 
 	if magicmethods.__init then
@@ -288,5 +315,6 @@ main.event = mkEvent
 main.getProp = getProp
 main.setProp = setProp
 main.setProps = setProps
+main.null = null
 
 return setmetatable(main, { __call = __call })
