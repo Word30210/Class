@@ -1,0 +1,3 @@
+[submodule "Class/lib/LemonSignal"]
+	path = Class/lib/LemonSignal
+	url = https://github.com/Data-Oriented-House/LemonSignal
