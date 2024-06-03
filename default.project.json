@@ -9,14 +9,6 @@
       "Class": {
         "$path": "Class",
 
-        "lib": {
-          "$className": "Folder",
-
-          "LemonSignal": {
-            "$path": "Modules/LemonSignal"
-          }
-        },
-
         "testers": {
           "$className": "Folder",
           "$path": "Testers"
