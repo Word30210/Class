@@ -52,10 +52,9 @@ local myFrame = Class "Frame" {
 local Screen = Instance.new("ScreenGui")
 Screen.Parent = game.StarterGui
 
-local myNewFrame = myFrame.new("BackgroundFrame")
-myNewFrame.parent = Screen
+myFrame.objectCreated:Connect(print)
 
-myNewFrame.testEvent:Connect(print)
-myNewFrame.testEvent:Fire "Hello, world!"
+local myNewFrame = myFrame.new("BackgroundFrame")
+local a = myFrame.new("a")
 
 return nil
