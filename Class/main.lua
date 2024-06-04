@@ -13,6 +13,7 @@ local mkFunc = require(script.Parent.mkFunc)
 local getProp = require(script.Parent.getProp)
 local setProp = require(script.Parent.setProp)
 local setProps = require(script.Parent.setProps)
+local destroyer = require(script.Parent.destroyer)
 
 --#[ libs ]#--
 local lib = script.Parent.lib
@@ -28,7 +29,10 @@ local main = {}
 local null = newproxy()
 
 local getableClassKeyDict = {
-	new = true
+	new = true;
+
+	objectCreated = true;
+	objectDestroyed = true;
 }
 
 --#[ Functions ]#--
@@ -82,8 +86,15 @@ function buildClass(className, magicmethods, functions, methods, events)
 	local class = newproxy(true)
 	local metatable = getmetatable(class)
 
+	local objectCreated = LemonSignal.new()
+	local objectDestroyed = LemonSignal.new()
+
 	local function new(...: any)
-		return buildObject(class, ...)
+		local newObject = buildObject(class, ...)
+
+		task.defer(objectCreated.Fire, objectCreated, newObject)
+
+		return newObject
 	end
 
 	metatable.__variables = {
@@ -94,6 +105,8 @@ function buildClass(className, magicmethods, functions, methods, events)
 		events = events;
 
 		new = new;
+		objectCreated = objectCreated;
+		objectDestroyed = objectDestroyed;
 	}
 
 	function metatable.__index(self, key)
@@ -133,6 +146,7 @@ function buildObject(class, ...: any)
 	metatable.__properties = properties
 	metatable.__internals = internals
 	metatable.__type = className
+	metatable.__class = class
 
 	local getableKeyDict = {}
 	local setableKeyDict = {}
@@ -161,7 +175,7 @@ function buildObject(class, ...: any)
 		properties[event.name] = LemonSignal.new()
 	end
 
-	function metatable.__index(self, key)
+	local function __index(self, key)
 		assert(getableKeyDict[key], `{ key } is not a valid member of { tostring(class) }.`)
 
 		if magicmethods.__getter then
@@ -187,7 +201,7 @@ function buildObject(class, ...: any)
 		end
 	end
 
-	function metatable.__newindex(self, key, value)
+	local function __newindex(self, key, value)
 		assert(setableKeyDict[key], `{ tostring(self) }.{ key } is readonly`)
 
 		if magicmethods.__setter then
@@ -199,13 +213,11 @@ function buildObject(class, ...: any)
 		end
 	end
 
-	function metatable.__call(self, ...)
-		if magicmethods.__call then
-			return magicmethods.__call.runner(self, internals, ...)
-		end
+	local function __call(self, ...)
+		return magicmethods.__call.runner(self, internals, ...)
 	end
 
-	function metatable.__concat(obj1, obj2)
+	local function __concat(obj1, obj2)
 		if magicmethods.__concat then
 			return magicmethods.__concat.runner(object, internals, obj1, obj2)
 		else
@@ -213,55 +225,39 @@ function buildObject(class, ...: any)
 		end
 	end
 
-	function metatable.__unm(self)
-		if magicmethods.__unm then
-			return magicmethods.__unm.runner(self, internals)
-		end
+	local function __unm(self)
+		return magicmethods.__unm.runner(self, internals)
 	end
 
-	function metatable.__add(obj1, obj2)
-		if magicmethods.__add then
-			return magicmethods.__add.runner(object, internals, obj1, obj2)
-		end
+	local function __add(obj1, obj2)
+		return magicmethods.__add.runner(object, internals, obj1, obj2)
 	end
 
-	function metatable.__sub(obj1, obj2)
-		if magicmethods.__sub then
-			return magicmethods.__sub.runner(object, internals, obj1, obj2)
-		end
+	local function __sub(obj1, obj2)
+		return magicmethods.__sub.runner(object, internals, obj1, obj2)
 	end
 
-	function metatable.__mul(obj1, obj2)
-		if magicmethods.__mul then
-			return magicmethods.__mul.runner(object, internals, obj1, obj2)
-		end
+	local function __mul(obj1, obj2)
+		return magicmethods.__mul.runner(object, internals, obj1, obj2)
 	end
 
-	function metatable.__div(obj1, obj2)
-		if magicmethods.__div then
-			return magicmethods.__div.runner(object, internals, obj1, obj2)
-		end
+	local function __div(obj1, obj2)
+		return magicmethods.__div.runner(object, internals, obj1, obj2)
 	end
 
-	function metatable.__idiv(obj1, obj2)
-		if magicmethods.__idiv then
-			return magicmethods.__idiv.runner(object, internals, obj1, obj2)
-		end
+	local function __idiv(obj1, obj2)
+		return magicmethods.__idiv.runner(object, internals, obj1, obj2)
 	end
 
-	function metatable.__mod(obj1, obj2)
-		if magicmethods.__mod then
-			return magicmethods.__mod.runner(object, internals, obj1, obj2)
-		end
+	local function __mod(obj1, obj2)
+		return magicmethods.__mod.runner(object, internals, obj1, obj2)
 	end
 
-	function metatable.__pow(obj1, obj2)
-		if magicmethods.__pow then
-			return magicmethods.__pow.runner(object, internals, obj1, obj2)
-		end
+	local function __pow(obj1, obj2)
+		return magicmethods.__pow.runner(object, internals, obj1, obj2)
 	end
 
-	function metatable.__tostring(self)
+	local function __tostring(self)
 		if magicmethods.__str then
 			return magicmethods.__str.runner(self, internals)
 		elseif magicmethods.__tostring then
@@ -271,34 +267,24 @@ function buildObject(class, ...: any)
 		end
 	end
 
-	function metatable.__eq(obj1, obj2)
-		if magicmethods.__eq then
-			return magicmethods.__eq.runner(object, internals, obj1, obj2)
-		end
+	local function __eq(obj1, obj2)
+		return magicmethods.__eq.runner(object, internals, obj1, obj2)
 	end
 
-	function metatable._lt(obj1, obj2)
-		if magicmethods.__lt then
-			return magicmethods.__lt.runner(object, internals, obj1, obj2)
-		end
+	local function __lt(obj1, obj2)
+		return magicmethods.__lt.runner(object, internals, obj1, obj2)
 	end
 
-	function metatable._le(obj1, obj2)
-		if magicmethods.__le then
-			return magicmethods.__le.runner(object, internals, obj1, obj2)
-		end
+	local function __le(obj1, obj2)
+		return magicmethods.__le.runner(object, internals, obj1, obj2)
 	end
 
-	function metatable.__len(self)
-		if magicmethods.__len then
-			return magicmethods.__len.runner(self, internals)
-		end
+	local function __len(self)
+		return magicmethods.__len.runner(self, internals)
 	end
 
-	function metatable.__iter(self)
-		if magicmethods.__iter then
-			return magicmethods.__iter.runner(self, internals)
-		end
+	local function __iter(self)
+		return magicmethods.__iter.runner(self, internals)
 	end
 
 	if magicmethods.__init then
@@ -306,6 +292,25 @@ function buildObject(class, ...: any)
 	end
 
 	metatable.__objectCreated = true
+
+	metatable.__index = __index
+	metatable.__newindex = __newindex
+	metatable.__call = magicmethods.__call and __call
+	metatable.__concat = magicmethods.__concat and __concat
+	metatable.__unm = magicmethods.__unm and __unm
+	metatable.__add = magicmethods.__add and __add
+	metatable.__sub = magicmethods.__sub and __sub
+	metatable.__mul = magicmethods.__mul and __mul
+	metatable.__div = magicmethods.__div and __div
+	metatable.__idiv = magicmethods.__idiv and __idiv
+	metatable.__mod = magicmethods.__mod and __mod
+	metatable.__pow = magicmethods.__pow and __pow
+	metatable.__tostring = __tostring
+	metatable.__eq = magicmethods.__eq and __eq
+	metatable.__lt = magicmethods.__lt and __lt
+	metatable.__le = magicmethods.__le and __le
+	metatable.__len = magicmethods.__len and __len
+	metatable.__iter = magicmethods.__iter and __iter
 
 	return object
 end
@@ -315,6 +320,7 @@ main.event = mkEvent
 main.getProp = getProp
 main.setProp = setProp
 main.setProps = setProps
+main.destroyer = destroyer
 main.null = null
 
 return setmetatable(main, { __call = __call })
