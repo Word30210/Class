@@ -70,6 +70,9 @@ print(word)
 word.Died:Connect(print, "Died") --// LemonSignal
 word.health = 0 --//😈😈
 ```
-> word has been born
-> word
-> Died
+Output
+```
+word has been born
+word
+Died
+```
