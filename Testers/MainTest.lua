@@ -6,55 +6,73 @@ local set = Class.setProp
 local super = Class.setProps
 local null = Class.null
 
-local myFrame = Class "Frame" {
-	def "__init" (function(self, internal, name)
-		super(self) {
-			color3 = Color3.new(1, 1, 1);
-			anchor = Vector2.new(0.5, 0.5);
-			position = UDim2.fromScale(0.5, 0.5);
-			size = UDim2.fromOffset(100, 100);
-			name = name;
-			parent = null;
-		}
+--[[
 
-		local frame = Instance.new("Frame")
-		frame.BorderSizePixel = 0
-		frame.BackgroundColor3 = Color3.new(1, 1, 1)
-		frame.AnchorPoint = Vector2.new(0.5, 0.5)
-		frame.Position = UDim2.fromScale(0.5, 0.5)
-		frame.Size = UDim2.fromOffset(100, 100)
-		frame.Name = name
+class Country:
+    """Super Class"""
 
-		internal.frame = frame
-		internal.getInstanceKey = {
-			color3 = "BackgroundColor3";
-			anchor = "AnchorPoint";
-			position = "Position";
-			size = "Size";
-			name = "Name";
-			parent = "Parent";
-		}
-	end);
+    name = '국가명'
+    population = '인구'
+    capital = '수도'
 
-	def "__setter" (function(self, internal, key, value)
-		set(self, key, value)
+    def show(self):
+        print('국가 클래스의 메소드입니다.')
 
-		internal.frame[internal.getInstanceKey[key]] = value
-	end);
 
-	def "__str" (function(self, internal)
-		return self.name
-	end);
+class Korea(Country):
+    """Sub Class"""
 
-	event "testEvent"
+    def __init__(self, name,population, capital):
+        self.name = name
+        self.population = population
+        self.capital = capital
+
+    def show(self):
+        print(
+            """
+            국가의 이름은 {} 입니다.
+            국가의 인구는 {} 입니다.
+            국가의 수도는 {} 입니다.
+            """.format(self.name, self.population, self.capital)
+        )
+    ... 생략
+
+]]
+
+local Country = {}
+Country = Class "Country" {
+	name = "국가명";
+	population = "인구";
+	capital = "수도";
+
+	def ":show" (function()
+		print("국가 클래스의 메소드입니다.")
+	end)
 }
 
-local Screen = Instance.new("ScreenGui")
-Screen.Parent = game.StarterGui
+Country.childClassCreated:Connect(print, "Created new child class:")
 
-myFrame.objectCreated:Connect(print)
+local Korea = {}
+Korea = Country "Korea" {
+	def "__init" (function(self, _, name, population, capital)
+		super(self) {
+			name = name;
+			population = population;
+			capital = capital;
+		}
+	end);
 
-local myNewFrame = myFrame.new("BackgroundFrame")
-local a = myFrame.new("a")
+	def ":show" (function(self)
+		print(([[국가의 이름은 %s 입니다.
+			국가의 인구는 %s 입니다.
+			국가의 수도는 %s 입니다.]]):format(self.name, self.population, self.capital))
+	end)
+}
+
+local a = Country.new()
+a:show()
+
+local b = Korea.new("대한민국", 50000000, "서울")
+b:show()
 
 return nil

@@ -33,6 +33,7 @@ local getableClassKeyDict = {
 
 	objectCreated = true;
 	objectDestroyed = true;
+	childClassCreated = true;
 }
 
 --#[ Functions ]#--
@@ -41,9 +42,12 @@ local interpret = nil
 local buildClass = nil
 local buildObject = nil
 
+local __call_inheritance = nil
+local interpret_inheritance = nil
+
 local function weaktable(weaktable)
 	weaktable.__mode = weaktable.__mode or "kv"
-	
+
 	return setmetatable({}, weaktable)
 end
 
@@ -54,6 +58,17 @@ function __call(self, classNameOrClassConfig)
 		end
 	elseif type(classNameOrClassConfig) == "table" then
 		return interpret(nil, classNameOrClassConfig)
+	end
+end
+
+function __call_inheritance(self, classNameOrClassConfig)
+
+	if type(classNameOrClassConfig) == "string" then
+		return function(classConfig)
+			return interpret_inheritance(classNameOrClassConfig, classConfig, self)
+		end
+	elseif type(classNameOrClassConfig) == "table" then
+		return interpret_inheritance(nil, classNameOrClassConfig, self)
 	end
 end
 
@@ -82,12 +97,57 @@ function interpret(className, classConfig)
 	return buildClass(className, magicmethods, functions, methods, events)
 end
 
+function interpret_inheritance(className, classConfig, parentClass)
+	local parentMetatable = getmetatable(parentClass)
+	local parentMagicmethods = parentMetatable.__variables.magicmethods
+	local parentFunctions = parentMetatable.__variables.functions
+	local parentMethods = parentMetatable.__variables.methods
+	local parentEvents = parentMetatable.__variables.events
+
+	local function inherit(parentTable, childTable)
+		for key, value in parentTable do
+			if childTable[key] then continue end
+
+			childTable[key] = value
+		end
+	end
+
+	local magicmethods = {}
+	local functions = {}
+	local methods = {}
+	local events = {}
+
+	for _, config in classConfig do
+		local configType = getmetatable(config).__type
+		if configType == "func" then
+			local funcType = config.funcType
+			if funcType == "magic" then
+				magicmethods[config.name] = config
+			elseif funcType == "default" then
+				functions[config.name] = config
+			elseif funcType == "method" then
+				methods[config.name] = config
+			end
+		elseif configType == "event" then
+			events[config.name] = config
+		end
+	end
+
+	inherit(parentMagicmethods, magicmethods)
+	inherit(parentFunctions, functions)
+	inherit(parentMethods, methods)
+	inherit(parentEvents, events)
+
+	return buildClass(className, magicmethods, functions, methods, events)
+end
+
 function buildClass(className, magicmethods, functions, methods, events)
 	local class = newproxy(true)
 	local metatable = getmetatable(class)
 
 	local objectCreated = LemonSignal.new()
 	local objectDestroyed = LemonSignal.new()
+	local childClassCreated = LemonSignal.new()
 
 	local function new(...: any)
 		local newObject = buildObject(class, ...)
@@ -107,6 +167,7 @@ function buildClass(className, magicmethods, functions, methods, events)
 		new = new;
 		objectCreated = objectCreated;
 		objectDestroyed = objectDestroyed;
+		childClassCreated = childClassCreated;
 	}
 
 	function metatable.__index(self, key)
@@ -121,6 +182,14 @@ function buildClass(className, magicmethods, functions, methods, events)
 
 	function metatable.__tostring(self)
 		return `<Class: { className or "[Unknown]" }>`
+	end
+
+	function metatable.__call(self, classNameOrClassConfig)
+		local childClass = __call_inheritance(self, classNameOrClassConfig)
+
+		task.defer(childClassCreated.Fire, childClassCreated, childClass)
+
+		return childClass
 	end
 
 	return class
