@@ -14,6 +14,7 @@ local event = Class.event
 local get = Class.getProp
 local set = Class.setProp
 local super = Class.setProps
+local null = class.null
 local destroyer = Class.destroyer
 
 local Human = {}
@@ -24,12 +25,12 @@ Human = Class "Human" {
       age = age;
       job = job;
 
+      parent = null;
       health = 100;
     }
 
     local newCharacter = ServerStorage.characterTemplate:Clone()
     newCharacter.Name = name;
-    newCharacter.Parent = workspace
     internal.character = newCharacter
   end);
 
@@ -37,9 +38,13 @@ Human = Class "Human" {
     if key == "name" then
       internal.character.Name = value
     elseif key == "health" then
-      internal.character.Health = value
+      internal.character.Humanoid.Health = value
       if value == 0 then
         self.Died:Fire()
+      end
+    elseif key == "parent" then
+      if value == null then
+        internal.character.Parent = value
       end
     end
     set(self, key, value)
@@ -66,6 +71,8 @@ end)
 
 local word = Human.new("word", 15 --[[My american age]], "Student")
 print(word)
+
+word.parent = workspace
 
 word.Died:Connect(print, "Died") --// LemonSignal
 word.health = 0 --//😈😈
