@@ -137,14 +137,14 @@ function buildObject(class, ...: any)
 	local events = getVariable "events"
 	local className = getVariable "className"
 
-	local internals = {}
+	local internal = {}
 	local properties = {}
 
 	local object = newproxy(true)
 	local metatable = getmetatable(object)
 
 	metatable.__properties = properties
-	metatable.__internals = internals
+	metatable.__internal = internal
 	metatable.__type = className
 	metatable.__class = class
 
@@ -155,7 +155,7 @@ function buildObject(class, ...: any)
 	metatable.__setableKeyDict = setableKeyDict
 
 	if magicmethods.__new then
-		magicmethods.__new.runner(object, internals, ...)
+		magicmethods.__new.runner(object, internal, ...)
 	end
 
 	for _, func in functions do
@@ -166,7 +166,7 @@ function buildObject(class, ...: any)
 	for _, method in methods do
 		getableKeyDict[method.name] = true
 		properties[method.name] = function(self, ...)
-			method.runner(self, internals, ...)
+			method.runner(self, internal, ...)
 		end
 	end
 
@@ -179,14 +179,14 @@ function buildObject(class, ...: any)
 		assert(getableKeyDict[key], `{ key } is not a valid member of { tostring(class) }.`)
 
 		if magicmethods.__getter then
-			local result = magicmethods.__getter.runner(self, internals, key)
+			local result = magicmethods.__getter.runner(self, internal, key)
 			if result == null then
 				return nil
 			else
 				return result
 			end
 		elseif magicmethods.__index then
-			local result = magicmethods.__index.runner(self, internals, key)
+			local result = magicmethods.__index.runner(self, internal, key)
 			if result == null then
 				return nil
 			else
@@ -205,90 +205,90 @@ function buildObject(class, ...: any)
 		assert(setableKeyDict[key], `{ tostring(self) }.{ key } is readonly`)
 
 		if magicmethods.__setter then
-			magicmethods.__setter.runner(self, internals, key, value)
+			magicmethods.__setter.runner(self, internal, key, value)
 		elseif magicmethods.__newindex then
-			magicmethods.__newindex.runner(self, internals, key, value)
+			magicmethods.__newindex.runner(self, internal, key, value)
 		else
 			properties[key] = value
 		end
 	end
 
 	local function __call(self, ...)
-		return magicmethods.__call.runner(self, internals, ...)
+		return magicmethods.__call.runner(self, internal, ...)
 	end
 
 	local function __concat(obj1, obj2)
 		if magicmethods.__concat then
-			return magicmethods.__concat.runner(object, internals, obj1, obj2)
+			return magicmethods.__concat.runner(object, internal, obj1, obj2)
 		else
 			return tostring(obj1) .. tostring(obj2)
 		end
 	end
 
 	local function __unm(self)
-		return magicmethods.__unm.runner(self, internals)
+		return magicmethods.__unm.runner(self, internal)
 	end
 
 	local function __add(obj1, obj2)
-		return magicmethods.__add.runner(object, internals, obj1, obj2)
+		return magicmethods.__add.runner(object, internal, obj1, obj2)
 	end
 
 	local function __sub(obj1, obj2)
-		return magicmethods.__sub.runner(object, internals, obj1, obj2)
+		return magicmethods.__sub.runner(object, internal, obj1, obj2)
 	end
 
 	local function __mul(obj1, obj2)
-		return magicmethods.__mul.runner(object, internals, obj1, obj2)
+		return magicmethods.__mul.runner(object, internal, obj1, obj2)
 	end
 
 	local function __div(obj1, obj2)
-		return magicmethods.__div.runner(object, internals, obj1, obj2)
+		return magicmethods.__div.runner(object, internal, obj1, obj2)
 	end
 
 	local function __idiv(obj1, obj2)
-		return magicmethods.__idiv.runner(object, internals, obj1, obj2)
+		return magicmethods.__idiv.runner(object, internal, obj1, obj2)
 	end
 
 	local function __mod(obj1, obj2)
-		return magicmethods.__mod.runner(object, internals, obj1, obj2)
+		return magicmethods.__mod.runner(object, internal, obj1, obj2)
 	end
 
 	local function __pow(obj1, obj2)
-		return magicmethods.__pow.runner(object, internals, obj1, obj2)
+		return magicmethods.__pow.runner(object, internal, obj1, obj2)
 	end
 
 	local function __tostring(self)
 		if magicmethods.__str then
-			return magicmethods.__str.runner(self, internals)
+			return magicmethods.__str.runner(self, internal)
 		elseif magicmethods.__tostring then
-			return magicmethods.__tostring.runner(self, internals)
+			return magicmethods.__tostring.runner(self, internal)
 		else
 			return `<Object: { className or "[Unknown]" }>`
 		end
 	end
 
 	local function __eq(obj1, obj2)
-		return magicmethods.__eq.runner(object, internals, obj1, obj2)
+		return magicmethods.__eq.runner(object, internal, obj1, obj2)
 	end
 
 	local function __lt(obj1, obj2)
-		return magicmethods.__lt.runner(object, internals, obj1, obj2)
+		return magicmethods.__lt.runner(object, internal, obj1, obj2)
 	end
 
 	local function __le(obj1, obj2)
-		return magicmethods.__le.runner(object, internals, obj1, obj2)
+		return magicmethods.__le.runner(object, internal, obj1, obj2)
 	end
 
 	local function __len(self)
-		return magicmethods.__len.runner(self, internals)
+		return magicmethods.__len.runner(self, internal)
 	end
 
 	local function __iter(self)
-		return magicmethods.__iter.runner(self, internals)
+		return magicmethods.__iter.runner(self, internal)
 	end
 
 	if magicmethods.__init then
-		magicmethods.__init.runner(object, internals, ...)
+		magicmethods.__init.runner(object, internal, ...)
 	end
 
 	metatable.__objectCreated = true

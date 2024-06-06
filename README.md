@@ -18,7 +18,7 @@ local destroyer = Class.destroyer
 
 local Human = {}
 Human = Class "Human" {
-  def "__init" (function(self, internals, name, age, job)
+  def "__init" (function(self, internal, name, age, job)
     super(self) {
       name = name;
       age = age;
@@ -30,14 +30,14 @@ Human = Class "Human" {
     local newCharacter = ServerStorage.characterTemplate:Clone()
     newCharacter.Name = name;
     newCharacter.Parent = workspace
-    internals.character = newCharacter
+    internal.character = newCharacter
   end);
 
-  def "__setter" (function(self, internals, key, value)
+  def "__setter" (function(self, internal, key, value)
     if key == "name" then
-      internals.character.Name = value
+      internal.character.Name = value
     elseif key == "health" then
-      internals.character.Health = value
+      internal.character.Health = value
       if value == 0 then
         self.Died:Fire()
       end

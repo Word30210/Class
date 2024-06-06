@@ -7,7 +7,7 @@ local super = Class.setProps
 local null = Class.null
 
 local myFrame = Class "Frame" {
-	def "__init" (function(self, internals, name)
+	def "__init" (function(self, internal, name)
 		super(self) {
 			color3 = Color3.new(1, 1, 1);
 			anchor = Vector2.new(0.5, 0.5);
@@ -25,8 +25,8 @@ local myFrame = Class "Frame" {
 		frame.Size = UDim2.fromOffset(100, 100)
 		frame.Name = name
 
-		internals.frame = frame
-		internals.getInstanceKey = {
+		internal.frame = frame
+		internal.getInstanceKey = {
 			color3 = "BackgroundColor3";
 			anchor = "AnchorPoint";
 			position = "Position";
@@ -36,13 +36,13 @@ local myFrame = Class "Frame" {
 		}
 	end);
 
-	def "__setter" (function(self, internals, key, value)
+	def "__setter" (function(self, internal, key, value)
 		set(self, key, value)
 
-		internals.frame[internals.getInstanceKey[key]] = value
+		internal.frame[internal.getInstanceKey[key]] = value
 	end);
 
-	def "__str" (function(self, internals)
+	def "__str" (function(self, internal)
 		return self.name
 	end);
 
