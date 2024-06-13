@@ -6,80 +6,74 @@ Not yet.(sorry)
 
 # Example
 ```lua
-local ServerStorage = game:GetService("ServerStorage")
-
 local Class = require(path.to.Class)
 local def = Class.func
 local event = Class.event
 local get = Class.getProp
 local set = Class.setProp
-local super = Class.setProps
-local null = class.null
+local prop = Class.setProps
 local destroyer = Class.destroyer
 
-local Human = {}
-Human = Class "Human" {
-  def "__init" (function(self, internal, name, age, job)
-    super(self) {
-      name = name;
-      age = age;
-      job = job;
-
-      parent = null;
-      health = 100;
+local Car = Class "Car" {
+  def "__init" (function(self, internal, Model, Color)
+    prop(self) {
+      Model = Model or "EpicModel";
+      Color = Color or "Blue";
+      Speed = 0;
+      IsDriving = false;
     }
-
-    local newCharacter = ServerStorage.characterTemplate:Clone()
-    newCharacter.Name = name;
-    internal.character = newCharacter
   end);
 
   def "__setter" (function(self, internal, key, value)
-    if key == "name" then
-      internal.character.Name = value
-    elseif key == "health" then
-      internal.character.Humanoid.Health = value
-      if value == 0 then
-        self.Died:Fire()
-      end
-    elseif key == "parent" then
-      if value == null then
-        internal.character.Parent = value
-      end
-    end
+    assert(key ~= "Speed", "Car.Speed is read-only")
+    assert(key ~= "IsDriving", "Car.IsDriving is read-only")
+
     set(self, key, value)
   end);
 
-  def "__str" (function(self, _)
-    return self.name
+  def ":Drive" (function(self, internal)
+    set(self, "IsDriving", true)
   end);
 
-  def ":Kill" (function(self, _)
-    self.health = 0 --// call __setter
+  def ":Stop" (function(self, internal)
+    set(self, "Speed", 0)
+    set(self, "IsDriving", false)
+
+    self.Stopped:Fire()
   end);
 
-  def ":Destroy" (function(self, _)
-    return destroyer(self)
+  def ":SetSpeed" (function(self, internal, speed)
+    if self.IsDriving then
+      set(self, "Speed", speed)
+    end
+
+    self.SpeedChanged:Fire(speed)
   end);
 
-  event "Died";
+  def ":Destroy" (function(self, internal)
+    destroyer(self)
+  end);
+
+  event "Stopped";
+  event "SpeedChanged";
 }
 
-Human.objectCreated:Connect(function(object)
-  print(`{ object } has been born`)
-end)
+local myCar = Car.new("bung-bung car", "Red & Yellow")
 
-local word = Human.new("word", 15 --[[My american age]], "Student")
-print(word)
+myCar.Stopped:Connect(print, "Stopped") --// LemonSignal
+myCar.SpeedChanged:Connect(print, "SppedChanged") --// LemonSignal
 
-word.parent = workspace
+myCar:Drive()
+myCar.Color = "Blue & Green"
+myCar:SetSpeed(100)
+myCar:Stop()
+print(myCar.Color)
 
-word.Died:Connect(print, "Died") --// LemonSignal
-word.health = 0 --//😈😈
+return nil
 ```
 Output
 ```
-word has been born
-word
-Died
+SppedChanged 100
+Stopped
+Blue & Green
 ```
