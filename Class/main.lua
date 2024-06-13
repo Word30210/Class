@@ -54,24 +54,24 @@ end
 function __call(self, classNameOrClassConfig)
 	if type(classNameOrClassConfig) == "string" then
 		return function(classConfig)
-			return interpret(classNameOrClassConfig, classConfig)
+			return interpret(classNameOrClassConfig, classConfig) :: Types.class
 		end
 	elseif type(classNameOrClassConfig) == "table" then
-		return interpret(nil, classNameOrClassConfig)
+		return interpret(nil, classNameOrClassConfig) :: Types.class
 	end
 end
 
-function __call_inheritance(self, classNameOrClassConfig)
+function __call_inheritance(self, classNameOrClassConfig: string | Types.classConfig)
 	if type(classNameOrClassConfig) == "string" then
-		return function(classConfig)
-			return interpret_inheritance(classNameOrClassConfig, classConfig, self)
+		return function(classConfig: Types.classConfig)
+			return interpret_inheritance(classNameOrClassConfig, classConfig, self) :: Types.class
 		end
 	elseif type(classNameOrClassConfig) == "table" then
-		return interpret_inheritance(nil, classNameOrClassConfig, self)
+		return interpret_inheritance(nil, classNameOrClassConfig, self) :: Types.class
 	end
 end
 
-function interpret(className, classConfig)
+function interpret(className: string, classConfig: Types.classConfig)
 	local magicmethods = {}
 	local functions = {}
 	local methods = {}
@@ -96,7 +96,7 @@ function interpret(className, classConfig)
 	return buildClass(className, magicmethods, functions, methods, events)
 end
 
-function interpret_inheritance(className, classConfig, parentClass)
+function interpret_inheritance(className: string, classConfig: Types.classConfig, parentClass: Types.class)
 	local parentMetatable = getmetatable(parentClass)
 	local parentMagicmethods = parentMetatable.__variables.magicmethods
 	local parentFunctions = parentMetatable.__variables.functions
@@ -140,7 +140,7 @@ function interpret_inheritance(className, classConfig, parentClass)
 	return buildClass(className, magicmethods, functions, methods, events)
 end
 
-function buildClass(className, magicmethods, functions, methods, events)
+function buildClass(className: string, magicmethods, functions, methods, events)
 	local class = newproxy(true)
 	local metatable = getmetatable(class)
 
@@ -228,13 +228,15 @@ function buildObject(class, ...: any)
 
 	for _, func in functions do
 		getableKeyDict[func.name] = true
-		properties[func.name] = func.runner
+		properties[func.name] = function(...)
+			return func.runner(internal, ...)
+		end
 	end
 
 	for _, method in methods do
 		getableKeyDict[method.name] = true
 		properties[method.name] = function(self, ...)
-			method.runner(self, internal, ...)
+			return method.runner(self, internal, ...)
 		end
 	end
 
