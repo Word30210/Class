@@ -16,4 +16,5 @@
 	[ https://github.com/Word30210/Class ]
 ]]
 
-return require(script.main)
+local types = require(script.Types)
+return require(script.main) :: types.main
