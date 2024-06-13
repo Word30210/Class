@@ -62,7 +62,6 @@ function __call(self, classNameOrClassConfig)
 end
 
 function __call_inheritance(self, classNameOrClassConfig)
-
 	if type(classNameOrClassConfig) == "string" then
 		return function(classConfig)
 			return interpret_inheritance(classNameOrClassConfig, classConfig, self)
