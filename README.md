@@ -4,7 +4,8 @@ Roblox Object Oriented Programming Helper that resembles Python
 # Document
 Not yet.(sorry)
 
-# Example
+# Examples
+**CarClass.luau**
 ```lua
 local Class = require(path.to.Class)
 local def = Class.func
@@ -77,3 +78,6 @@ SppedChanged 100
 Stopped
 Blue & Green
 ```
+
+**ez_buffer.luau**
+https://gist.github.com/Word30210/1b0ebc0a7960c4e426ae4270c2178054
