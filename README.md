@@ -81,3 +81,7 @@ Blue & Green
 
 **ez_buffer.luau**
 https://gist.github.com/Word30210/1b0ebc0a7960c4e426ae4270c2178054
+
+# Futures
+
+- **Rework with stricter code using `--!strict`**
